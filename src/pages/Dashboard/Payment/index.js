@@ -1,25 +1,45 @@
 import { Typography } from '@material-ui/core';
 import styled from 'styled-components';
 import Button from '../../../components/Form/Button';
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import TicketsTypeInfoContext from '../../../contexts/TyckesTypeContext';
+import useToken from '../../../hooks/useToken';
+import { getPersonalInformations } from '../../../services/enrollmentApi';
 export default function Payment() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [selectedHotel, setSelectedHotel] = useState(null);
   const [showTicket, setShowTicket] = useState('block');
   const [showHotel, setShowHotel] = useState('none');
   const [showResume, setShowResume] = useState('none');
+  const [hasEnrollment, setHasEnrollment] = useState(false);
   const { ticketsTypeInfo, ticketsTypeInfoError } = useContext(TicketsTypeInfoContext);
   const [totalPrice, setTotalPrice] = useState(0);
+  const token = useToken();
   let hotelPrice = 0;
+  useEffect(() => {
+    getPersonalInformations(token)
+      .then((data) => {
+        if (data) {
+          setHasEnrollment(true);
+        } else {
+          setHasEnrollment(false);
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching personal information:', error);
+      });
+  }, [token]);
+  useEffect(() => {
+    calculateTotal();
+  }, [selectedTicket, selectedHotel]);
   const handleTicketClick = (ticket) => {
     setSelectedTicket(ticket);
     setSelectedHotel(null);
-    if(ticket.name === 'online' || ticket.name === 'Online') {
+    if(ticket.name.toLowerCase() === 'online') {
       setShowHotel('none');
       setShowResume('block');
       calculateTotal();
-    } else if(ticket.name === 'presencial' || ticket.name === 'Presencial') {
+    } else if(ticket.name.toLowerCase() === 'presencial') {
       setShowHotel('block');
       setShowResume('none');
     }
@@ -44,8 +64,8 @@ export default function Payment() {
   return (
     <>
       <StyledTypography variant="h4">Ingresso e pagamento</StyledTypography>
-      <Container display={showTicket}>
-        <>
+      { hasEnrollment === true ? (
+        <Container display={showTicket}>
           <StyledSubtitle variant='h6'>Primeiro, escolha sua modalidade de ingresso</StyledSubtitle>
           <BoxContainer>
             {ticketsTypeInfo.map((ticket) => (
@@ -55,35 +75,40 @@ export default function Payment() {
                 key={ticket.id}
               >
                 <div>{ticket.name}</div>
-                <div>{ticket.price}</div>
+                <div>R$ {ticket.price},00</div>
               </StyledBox>
             ))}
           </BoxContainer>
-        </>
-        <Container display={showHotel}>
-          <StyledSubtitle variant='h6'>
-            Ótimo! Agora escolha sua modalidade de hospedagem
-          </StyledSubtitle>
-          <BoxContainer>
-            <StyledBox onClick={() => handleHotelClick('Sem Hotel')} backgroundColor={selectedHotel === 'Sem Hotel' ? '#FFEED2' : 'white'}>
-              <div>Sem Hotel;</div>
-              <div>+ R$ 0;</div>
-            </StyledBox>
-            <StyledBox onClick={() => handleHotelClick('Com Hotel')} backgroundColor={selectedHotel === 'Com Hotel' ? '#FFEED2' : 'white'}>
-              <div>Com Hotel;</div>
-              <div>+ R$ 350;</div>
-            </StyledBox>
-          </BoxContainer>
+          <Container display={showHotel}>
+            <StyledSubtitle variant='h6'>
+              Ótimo! Agora escolha sua modalidade de hospedagem
+            </StyledSubtitle>
+            <BoxContainer>
+              <StyledBox onClick={() => handleHotelClick('Sem Hotel')} backgroundColor={selectedHotel === 'Sem Hotel' ? '#FFEED2' : 'white'}>
+                <div>Sem Hotel</div>
+                <div>+ R$ 0</div>
+              </StyledBox>
+              <StyledBox onClick={() => handleHotelClick('Com Hotel')} backgroundColor={selectedHotel === 'Com Hotel' ? '#FFEED2' : 'white'}>
+                <div>Com Hotel</div>
+                <div>+ R$ 350,00</div>
+              </StyledBox>
+            </BoxContainer>
+          </Container>
+          <Container display={showResume}>
+            <StyledSubtitle variant='h6'>
+            Fechado! O total ficou em R$ { totalPrice.toString() }. Agora é só confirmar:
+            </StyledSubtitle>
+            <Button onClick={handleButtonClick}>
+              RESERVAR INGRESSO
+            </Button>
+          </Container>
         </Container>
-        <Container display={showResume}>
-          <StyledSubtitle variant='h6'>
-          Fechado! O total ficou em R$ { totalPrice.toString() }. Agora é só confirmar:
-          </StyledSubtitle>
-          <Button onClick={handleButtonClick}>
-            RESERVAR INGRESSO
-          </Button>
-        </Container>
-      </Container>
+      ):(
+        <MessageContainer>
+          <StyledSubtitle variant='h6'>Você precisa completar sua inscrição antes</StyledSubtitle>
+          <StyledSubtitle variant='h6'>de prosseguir pra escolha de ingresso</StyledSubtitle>
+        </MessageContainer>
+      )}
     </>
   );
 }
@@ -128,4 +153,13 @@ const StyledBox = styled.div`
     text-align: center;
     color: #454545;
   }
+`;
+
+const MessageContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 80%;
+  width: 100%;
 `;
