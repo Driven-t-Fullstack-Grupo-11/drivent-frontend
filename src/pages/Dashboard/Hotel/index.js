@@ -2,15 +2,15 @@ import styled from 'styled-components';
 import { Typography } from '@material-ui/core';
 import HotelCard from './hotelCard';
 import Room from './room';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useState } from 'react';
 import useToken from '../../../hooks/useToken';
 
 export default function Hotel() {
   const [hotel, setHotel] = useState([]);
   const [includesHotel, setIncludesHotel] = useState(true);
   const [paid, setPaid] = useState(true);
+  const [selectedHotelId, setSelectedHotelId] = useState(null);
   const token = useToken();
 
   useEffect(() => {
@@ -22,7 +22,6 @@ export default function Hotel() {
     const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/hotels/`, config);
     response.then((res) => {
       setHotel(res.data);
-      console.log(res.data);
     });
     response.catch((err) => {
       console.log(err.response.data);
@@ -32,9 +31,35 @@ export default function Hotel() {
         setIncludesHotel(false);
       }
     });
-    console.log('paid', paid);
-    console.log('includeshotel', includesHotel);
-  }, []);
+  }, [token]);
+
+  function handleHotel(hotelId) {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+    const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/hotels/${hotelId}`, config);
+    response.then((res) => {
+      console.log(res.data);
+    });
+    response.catch((err) => {
+      console.log(err.response.data);
+    });
+  }
+
+  function handleContainerClick(hotelId) {
+    if (selectedHotelId === hotelId) {
+      setSelectedHotelId(null);
+      console.log('selecthotel', selectedHotelId);
+      console.log('hotelid', hotelId);
+    } else {
+      setSelectedHotelId(hotelId);
+      console.log('selecthotel', selectedHotelId);
+      handleHotel(hotelId);
+      console.log('hotelid', hotelId);
+    }
+  }
 
   return (
     <>
@@ -47,16 +72,17 @@ export default function Hotel() {
 
             <Feed>
               {hotel.map((h) => {
-                return <HotelCard h={h} />;
+                return (
+                  <HotelCard
+                    h={h}
+                    handleContainerClick={() => handleContainerClick(h.id)}
+                    selectedHotelId={selectedHotelId}
+                  />
+                );
               })}
             </Feed>
 
             <FeedRoom>
-              <Room />
-              <Room />
-              <Room />
-              <Room />
-              <Room />
               <Room />
             </FeedRoom>
           </>
