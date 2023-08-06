@@ -4,11 +4,12 @@ import styled from 'styled-components';
 import useToken from '../../../hooks/useToken';
 import { useState } from 'react';
 
-export default function HotelCard({ h }) {
+export default function HotelCard({ h, handleContainerClick, selectedHotelId }) {
   const token = useToken();
   const [roomInfo, setRoomInfo] = useState([]);
   const [totalCapacity, setTotalCapacity] = useState(0);
   const [uniqueAccommodations, setUniqueAccommodations] = useState([]);
+  const [clickHotel, setClickHotel] = useState(false);
 
   useEffect(() => {
     const config = {
@@ -48,9 +49,16 @@ export default function HotelCard({ h }) {
     }
   }
 
+  console.log(clickHotel);
+
   return (
-    <Container>
-      <Card>
+    <Container
+      selected={selectedHotelId === h.id}
+      onClick={() => {
+        handleContainerClick(h.id);
+      }}
+    >
+      <Card selected={selectedHotelId === h.id}>
         <img src={h.image} />
         <Title>{h.name}</Title>
         <SubTitle>Tipos de acomodação:</SubTitle>
@@ -68,7 +76,7 @@ export default function HotelCard({ h }) {
 }
 
 const Container = styled.div`
-  background-color: #ebebeb;
+  background-color: ${({ selected }) => (selected ? '#ffeed2' : '#ebebeb')};
   padding: 20px;
   width: 196px;
   border-radius: 10px;
@@ -83,7 +91,7 @@ const Container = styled.div`
 `;
 
 const Card = styled.div`
-  background-color: #ebebeb;
+  background-color: ${({ selected }) => (selected ? '#ffeed2' : '#ebebeb')};
   color: #343434;
 
   p {
@@ -97,7 +105,7 @@ const Card = styled.div`
 
 const TextCapacity = styled.div`
   display: flex;
-  
+
   color: #3b3b3b;
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
