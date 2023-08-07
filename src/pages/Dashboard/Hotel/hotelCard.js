@@ -4,8 +4,9 @@ import styled from 'styled-components';
 import useToken from '../../../hooks/useToken';
 import { useState } from 'react';
 
-export default function HotelCard({ h }) {
+export default function HotelCard(props) {
   const token = useToken();
+  const h = props.h;
   const [roomInfo, setRoomInfo] = useState([]);
   const [totalCapacity, setTotalCapacity] = useState(0);
   const [uniqueAccommodations, setUniqueAccommodations] = useState([]);
@@ -49,7 +50,7 @@ export default function HotelCard({ h }) {
   }
 
   return (
-    <Container>
+    <Container onClick={props.setSelected}>
       <Card>
         <img src={h.image} />
         <Title>{h.name}</Title>

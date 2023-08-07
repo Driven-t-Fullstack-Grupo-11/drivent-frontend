@@ -11,7 +11,9 @@ export default function Hotel() {
   const [hotel, setHotel] = useState([]);
   const [includesHotel, setIncludesHotel] = useState(true);
   const [paid, setPaid] = useState(true);
+  const [definedhotel, setDefinedHotel] = useState(false);
   const token = useToken();
+  const [roomInfo, setRoomInfo] = useState([]);
 
   useEffect(() => {
     const config = {
@@ -36,6 +38,20 @@ export default function Hotel() {
     console.log('includeshotel', includesHotel);
   }, []);
 
+  function selecthotel(h) {
+    setDefinedHotel(h);
+    console.log(h);
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+    const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/hotels/${h.id}`, config);
+    response.then((res) => {
+      setRoomInfo(res.data.Rooms); console.log(res.data.Rooms);})
+      .catch((e) => console.log(e));
+  }
+
   return (
     <>
       <Title variant="h4"> Escolha de hotel e quarto </Title>
@@ -47,18 +63,23 @@ export default function Hotel() {
 
             <Feed>
               {hotel.map((h) => {
-                return <HotelCard h={h} />;
+                return <HotelCard h={h} setSelected={() => selecthotel(h)} />;
               })}
             </Feed>
-
-            <FeedRoom>
-              <Room />
-              <Room />
-              <Room />
-              <Room />
-              <Room />
-              <Room />
-            </FeedRoom>
+            {
+              definedhotel? 
+                <>
+                  <SubTitle> Ótima pedida! Agora escolha seu quarto </SubTitle>
+                  <FeedRoom>
+                    {roomInfo.map((r) => {
+                      return <Room name={r.name} capacity={r.capacity} id ={r.id} />;
+                    })}
+                  </FeedRoom> 
+                </>
+                : 
+                <></>
+            }
+            
           </>
         ) : (
           <Container>
