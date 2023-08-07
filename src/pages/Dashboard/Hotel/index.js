@@ -2,16 +2,18 @@ import styled from 'styled-components';
 import { Typography } from '@material-ui/core';
 import HotelCard from './hotelCard';
 import Room from './room';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import axios from 'axios';
+import { useState } from 'react';
 import useToken from '../../../hooks/useToken';
 
 export default function Hotel() {
   const [hotel, setHotel] = useState([]);
   const [includesHotel, setIncludesHotel] = useState(true);
   const [paid, setPaid] = useState(true);
-  const [selectedHotelId, setSelectedHotelId] = useState(null);
+  const [definedhotel, setDefinedHotel] = useState(false);
   const token = useToken();
+  const [roomInfo, setRoomInfo] = useState([]);
 
   useEffect(() => {
     const config = {
@@ -22,6 +24,7 @@ export default function Hotel() {
     const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/hotels/`, config);
     response.then((res) => {
       setHotel(res.data);
+      console.log(res.data);
     });
     response.catch((err) => {
       console.log(err.response.data);
@@ -31,34 +34,22 @@ export default function Hotel() {
         setIncludesHotel(false);
       }
     });
-  }, [token]);
+    console.log('paid', paid);
+    console.log('includeshotel', includesHotel);
+  }, []);
 
-  function handleHotel(hotelId) {
+  function selecthotel(h) {
+    setDefinedHotel(h);
+    console.log(h);
     const config = {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     };
-    const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/hotels/${hotelId}`, config);
+    const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/hotels/${h.id}`, config);
     response.then((res) => {
-      console.log(res.data);
-    });
-    response.catch((err) => {
-      console.log(err.response.data);
-    });
-  }
-
-  function handleContainerClick(hotelId) {
-    if (selectedHotelId === hotelId) {
-      setSelectedHotelId(null);
-      console.log('selecthotel', selectedHotelId);
-      console.log('hotelid', hotelId);
-    } else {
-      setSelectedHotelId(hotelId);
-      console.log('selecthotel', selectedHotelId);
-      handleHotel(hotelId);
-      console.log('hotelid', hotelId);
-    }
+      setRoomInfo(res.data.Rooms); console.log(res.data.Rooms);})
+      .catch((e) => console.log(e));
   }
 
   return (
@@ -72,19 +63,23 @@ export default function Hotel() {
 
             <Feed>
               {hotel.map((h) => {
-                return (
-                  <HotelCard
-                    h={h}
-                    handleContainerClick={() => handleContainerClick(h.id)}
-                    selectedHotelId={selectedHotelId}
-                  />
-                );
+                return <HotelCard h={h} setSelected={() => selecthotel(h)} />;
               })}
             </Feed>
-
-            <FeedRoom>
-              <Room />
-            </FeedRoom>
+            {
+              definedhotel? 
+                <>
+                  <SubTitle> Ótima pedida! Agora escolha seu quarto </SubTitle>
+                  <FeedRoom>
+                    {roomInfo.map((r) => {
+                      return <Room name={r.name} capacity={r.capacity} id ={r.id} />;
+                    })}
+                  </FeedRoom> 
+                </>
+                : 
+                <></>
+            }
+            
           </>
         ) : (
           <Container>
