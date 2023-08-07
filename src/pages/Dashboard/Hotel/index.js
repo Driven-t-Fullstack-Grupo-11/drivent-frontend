@@ -63,7 +63,7 @@ export default function Hotel() {
 
             <Feed>
               {hotel.map((h) => {
-                return <HotelCard h={h} setSelected={() => selecthotel(h)} />;
+                return <HotelCard h={h} setSelected={() => selecthotel(h)} selected={JSON.stringify(definedhotel) === JSON.stringify(h)} />;
               })}
             </Feed>
             {
@@ -123,6 +123,7 @@ const FeedRoom = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   margin-top: 7px;
+  row-gap: 7px;
 `;
 
 const Container = styled.div`
