@@ -5,6 +5,7 @@ import { useState, useContext, useEffect } from 'react';
 import TicketsTypeInfoContext from '../../../contexts/TyckesTypeContext';
 import useToken from '../../../hooks/useToken';
 import { getPersonalInformations } from '../../../services/enrollmentApi';
+import { createTicket } from '../../../services/ticketTypeApi';
 export default function Payment() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [selectedHotel, setSelectedHotel] = useState(null);
@@ -49,8 +50,17 @@ export default function Payment() {
     setShowResume('block');
     calculateTotal();
   };
-  const handleButtonClick = () => {
-    setShowTicket('none');
+  const handleButtonClick = async() => {
+    if (selectedTicket) {
+      try {
+        const ticketId = selectedTicket.id;
+        const body = { ticketTypeId: ticketId };
+        const createdTicket = await createTicket(body, token);
+        setShowTicket('none');
+      } catch (error) {
+        console.error('Erro ao reservar ingresso:', error);
+      }
+    }
   };
   const calculateTotal = () => {
     let ticketPrice = selectedTicket ? selectedTicket.price : 0;
