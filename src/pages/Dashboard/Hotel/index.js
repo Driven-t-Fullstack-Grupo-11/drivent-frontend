@@ -47,8 +47,11 @@ export default function Hotel() {
       },
     };
     const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/hotels/${h.id}`, config);
-    response.then((res) => {
-      setRoomInfo(res.data.Rooms); console.log(res.data.Rooms);})
+    response
+      .then((res) => {
+        setRoomInfo(res.data.Rooms);
+        console.log(res.data.Rooms);
+      })
       .catch((e) => console.log(e));
   }
 
@@ -66,20 +69,18 @@ export default function Hotel() {
                 return <HotelCard h={h} setSelected={() => selecthotel(h)} />;
               })}
             </Feed>
-            {
-              definedhotel? 
-                <>
-                  <SubTitle> Ótima pedida! Agora escolha seu quarto </SubTitle>
-                  <FeedRoom>
-                    {roomInfo.map((r) => {
-                      return <Room name={r.name} capacity={r.capacity} id ={r.id} />;
-                    })}
-                  </FeedRoom> 
-                </>
-                : 
-                <></>
-            }
-            
+            {definedhotel ? (
+              <>
+                <SubTitle> Ótima pedida! Agora escolha seu quarto </SubTitle>
+                <FeedRoom>
+                  {roomInfo.map((r) => {
+                    return <Room name={r.name} capacity={r.capacity} id={r.id} />;
+                  })}
+                </FeedRoom>
+              </>
+            ) : (
+              <></>
+            )}
           </>
         ) : (
           <Container>
