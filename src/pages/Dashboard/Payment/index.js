@@ -1,11 +1,26 @@
-import { useState } from 'react';
+import { Typography } from '@material-ui/core';
 import styled from 'styled-components';
-import Chip from '../../../assets/images/pngwing.com.png';
-import Check from '../../../assets/images/checkicon.png';
+import Button from '../../../components/Form/Button';
+import { useState, useContext, useEffect } from 'react';
+import TicketsTypeInfoContext from '../../../contexts/TyckesTypeContext';
 import useToken from '../../../hooks/useToken';
+import { getPersonalInformations } from '../../../services/enrollmentApi';
+import { createTicket } from '../../../services/ticketTypeApi';
+import Chip from '../../../assets/images/pngwing.png';
+import Check from '../../../assets/images/checkicon.png';
 import axios from 'axios';
 
 export default function Payment() {
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [selectedHotel, setSelectedHotel] = useState(null);
+  const [showTicket, setShowTicket] = useState('block');
+  const [showHotel, setShowHotel] = useState('none');
+  const [showResume, setShowResume] = useState('none');
+  const [hasEnrollment, setHasEnrollment] = useState(false);
+  const { ticketsTypeInfo, ticketsTypeInfoError } = useContext(TicketsTypeInfoContext);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [showTickets, setShowTickets] = useState(true);
+
   const [card, setCard] = useState('');
   const [name, setName] = useState('Nome Impresso no Cartão');
   const [date, setDate] = useState('');
@@ -14,11 +29,70 @@ export default function Payment() {
   const [cvc, setCvc] = useState('');
   const [show, setShow] = useState(true);
   const [showPreview, setShowPreview] = useState(true);
+  const [showPayments, setShowPayments] = useState(false);
   const [card1, setCard1] = useState('••••');
   const [card2, setCard2] = useState('••••');
   const [card3, setCard3] = useState('••••');
   const [card4, setCard4] = useState('••••');
   const token = useToken();
+  let hotelPrice = 0;
+
+  useEffect(() => {
+    getPersonalInformations(token)
+      .then((data) => {
+        if (data) {
+          setHasEnrollment(true);
+        } else {
+          setHasEnrollment(false);
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching personal information:', error);
+      });
+  }, [token]);
+  useEffect(() => {
+    calculateTotal();
+  }, [selectedTicket, selectedHotel]);
+  const handleTicketClick = (ticket) => {
+    setSelectedTicket(ticket);
+    setSelectedHotel(null);
+    if (ticket.name.toLowerCase() === 'online') {
+      setShowHotel('none');
+      setShowResume('block');
+      calculateTotal();
+    } else if (ticket.name.toLowerCase() === 'presencial') {
+      setShowHotel('block');
+      setShowResume('none');
+    }
+  };
+  const handleHotelClick = (hotel) => {
+    setSelectedHotel(hotel);
+    setShowResume('block');
+    calculateTotal();
+  };
+  const handleButtonClick = async() => {
+    setShowTickets(false);
+    setShowPayments(true);
+    if (selectedTicket) {
+      try {
+        const ticketId = selectedTicket.id;
+        const body = { ticketTypeId: ticketId };
+        const createdTicket = await createTicket(body, token);
+        setShowTicket('none');
+      } catch (error) {
+        console.error('Erro ao reservar ingresso:', error);
+      }
+    }
+  };
+  const calculateTotal = () => {
+    let ticketPrice = selectedTicket ? selectedTicket.price : 0;
+    hotelPrice = selectedHotel === 'Com Hotel' ? 350 : 0;
+    const totalPrice = ticketPrice + hotelPrice;
+    setTotalPrice(totalPrice);
+  };
+  if (ticketsTypeInfoError) {
+    return <div>Error: {ticketsTypeInfoError}</div>;
+  }
 
   function click() {
     setShow(!show);
@@ -89,7 +163,7 @@ export default function Payment() {
   }
 
   function submitPayment() {
-    /* const ticketId = 123;
+    const ticketId = selectedTicket.id;
     const payment = {
       issuer: 'VISA',
       number: card,
@@ -99,94 +173,151 @@ export default function Payment() {
     };
     const config = { headers: { Authorization: `Bearer ${token}` } };
     const body = { ticketId, cardDate: payment };
+    const updateBody = { status: 'PAID' };
 
-    axios.post(`${process.env.REACT_APP_API_BASE_URL}/payments`, config, body); */
+    // axios.post(`${process.env.REACT_APP_API_BASE_URL}/payments`, config, body);
     if (card.length < 16) return alert('Confira os números do cartão');
     if (name === 'Nome Impresso no Cartão') return alert('Nome impresso no cartão é obrigatório');
     if (date.length < 5) return alert('Confira a data de expiração do cartão');
     if (cvc.length < 3) return alert('Confira o código de segurança do cartão');
+    // axios.put(`${process.env.REACT_APP_API_BASE_URL}/ticket`, config, updateBody);
 
     setShow(!show);
   }
 
   return (
-    <InfosContainer>
-      <h1>Ingresso e pagamento</h1>
+    <>
+      <TicketsContainer show={showTickets}>
+        <StyledTypography variant="h4">Ingresso e pagamento</StyledTypography>
+        {hasEnrollment === true ? (
+          <Container display={showTicket}>
+            <StyledSubtitle variant="h6">Primeiro, escolha sua modalidade de ingresso</StyledSubtitle>
+            <BoxContainer>
+              {ticketsTypeInfo.map((ticket) => (
+                <StyledBox
+                  onClick={() => handleTicketClick(ticket)}
+                  backgroundColor={selectedTicket === ticket ? '#FFEED2' : 'white'}
+                  key={ticket.id}
+                >
+                  <div>{ticket.name}</div>
+                  <div>R$ {ticket.price},00</div>
+                </StyledBox>
+              ))}
+            </BoxContainer>
+            <Container display={showHotel}>
+              <StyledSubtitle variant="h6">Ótimo! Agora escolha sua modalidade de hospedagem</StyledSubtitle>
+              <BoxContainer>
+                <StyledBox
+                  onClick={() => handleHotelClick('Sem Hotel')}
+                  backgroundColor={selectedHotel === 'Sem Hotel' ? '#FFEED2' : 'white'}
+                >
+                  <div>Sem Hotel</div>
+                  <div>+ R$ 0</div>
+                </StyledBox>
+                <StyledBox
+                  onClick={() => handleHotelClick('Com Hotel')}
+                  backgroundColor={selectedHotel === 'Com Hotel' ? '#FFEED2' : 'white'}
+                >
+                  <div>Com Hotel</div>
+                  <div>+ R$ 350,00</div>
+                </StyledBox>
+              </BoxContainer>
+            </Container>
+            <Container display={showResume}>
+              <StyledSubtitle variant="h6">
+                Fechado! O total ficou em R$ {totalPrice.toString()}. Agora é só confirmar:
+              </StyledSubtitle>
+              <Button onClick={handleButtonClick}>RESERVAR INGRESSO</Button>
+            </Container>
+          </Container>
+        ) : (
+          <MessageContainer>
+            <StyledSubtitle variant="h6">Você precisa completar sua inscrição antes</StyledSubtitle>
+            <StyledSubtitle variant="h6">de prosseguir pra escolha de ingresso</StyledSubtitle>
+          </MessageContainer>
+        )}
+      </TicketsContainer>
 
-      <TicketsInfoContainer show={showPreview}>
-        <h2>Ingresso escolhido</h2>
-        <div>aaaa</div>
-      </TicketsInfoContainer>
-      <PaymentContainer show={show}>
-        <h2>Pagamento</h2>
-        <CreditCardPaymentInfoContainer>
-          <CreditCardImageContainer>
-            <ChipContainer>
-              <img src={Chip} alt="" />
-            </ChipContainer>
-            <NumbersContainer>
-              <span>{card1}</span>
-              <span>{card2}</span>
-              <span>{card3}</span>
-              <span>{card4}</span>
-            </NumbersContainer>
-            <NameContainer>
-              <span>{name}</span>
-              <div>
-                <p>valid thru</p>
-                <p>
-                  {month}/{year}
-                </p>
-              </div>
-            </NameContainer>
-          </CreditCardImageContainer>
-          <PaymentInputsContainer>
-            <CardNumberContainer>
-              <input
-                placeholder="Card Number"
-                maxLength={16}
-                value={card}
-                onChange={(e) => changeNumber(e.target.value)}
-              ></input>
-              <span>E.g.: 49..., 51..., 36..., 37....</span>
-            </CardNumberContainer>
-            <input placeholder="Name" onChange={(e) => cardName(e.target.value)}></input>
-            <div>
-              <ValidThruContainer>
-                <input
-                  placeholder="Valid Thru"
-                  maxLength={5}
-                  value={date}
-                  onChange={(e) => cardDate(e.target.value)}
-                ></input>
-              </ValidThruContainer>
-              <CvcContainer>
-                <input placeholder="CVC" maxLength={3} onChange={(e) => setCvc(e.target.value)}></input>
-              </CvcContainer>
-            </div>
-          </PaymentInputsContainer>
-        </CreditCardPaymentInfoContainer>
-        <button onClick={submitPayment}>FINALIZAR PAGAMENTO</button>
-      </PaymentContainer>
-      <PaymentConfirmationContainer show={show}>
-        <h2>Pagamento</h2>
-        <PaymentConfirmationContentContainer>
-          <img src={Check} alt="" />
+      <InfosContainer show={showPayments}>
+        <h1>Ingresso e pagamento</h1>
+
+        <TicketsInfoContainer show={showPreview}>
+          <h2>Ingresso escolhido</h2>
           <div>
-            <h3>Pagamento Confirmado!</h3>
-            <p>Prossiga para a escolha de hospedagem e atividades</p>
+            {selectedTicket?.name} {selectedTicket?.name === 'online' ? '' : '+'} {selectedHotel} <br />
+            <span>R$ {totalPrice}</span>
           </div>
-        </PaymentConfirmationContentContainer>
-      </PaymentConfirmationContainer>
-    </InfosContainer>
+        </TicketsInfoContainer>
+        <PaymentContainer show={show}>
+          <h2>Pagamento</h2>
+          <CreditCardPaymentInfoContainer>
+            <CreditCardImageContainer>
+              <ChipContainer>
+                <img src={Chip} alt="" />
+              </ChipContainer>
+              <NumbersContainer>
+                <span>{card1}</span>
+                <span>{card2}</span>
+                <span>{card3}</span>
+                <span>{card4}</span>
+              </NumbersContainer>
+              <NameContainer>
+                <span>{name}</span>
+                <div>
+                  <p>valid thru</p>
+                  <p>
+                    {month}/{year}
+                  </p>
+                </div>
+              </NameContainer>
+            </CreditCardImageContainer>
+            <PaymentInputsContainer>
+              <CardNumberContainer>
+                <input
+                  placeholder="Card Number"
+                  maxLength={16}
+                  value={card}
+                  onChange={(e) => changeNumber(e.target.value)}
+                ></input>
+                <span>E.g.: 49..., 51..., 36..., 37....</span>
+              </CardNumberContainer>
+              <input placeholder="Name" onChange={(e) => cardName(e.target.value)}></input>
+              <div>
+                <ValidThruContainer>
+                  <input
+                    placeholder="Valid Thru"
+                    maxLength={5}
+                    value={date}
+                    onChange={(e) => cardDate(e.target.value)}
+                  ></input>
+                </ValidThruContainer>
+                <CvcContainer>
+                  <input placeholder="CVC" maxLength={3} onChange={(e) => setCvc(e.target.value)}></input>
+                </CvcContainer>
+              </div>
+            </PaymentInputsContainer>
+          </CreditCardPaymentInfoContainer>
+          <button onClick={submitPayment}>FINALIZAR PAGAMENTO</button>
+        </PaymentContainer>
+        <PaymentConfirmationContainer show={show}>
+          <h2>Pagamento</h2>
+          <PaymentConfirmationContentContainer>
+            <img src={Check} alt="" />
+            <div>
+              <h3>Pagamento Confirmado!</h3>
+              <p>Prossiga para a escolha de hospedagem e atividades</p>
+            </div>
+          </PaymentConfirmationContentContainer>
+        </PaymentConfirmationContainer>
+      </InfosContainer>
+    </>
   );
 }
 
 const InfosContainer = styled.div`
   width: 100%;
   height: 100%;
-  /* background-color: blue; */
-
+  display: ${(props) => (props.show ? 'visible' : 'none')}; /* background-color: blue; */
   h1 {
     font-size: 2vw;
   }
@@ -205,9 +336,13 @@ const InfosContainer = styled.div`
   }
 `;
 
+const TicketsContainer = styled.div`
+  display: ${(props) => (props.show ? 'visible' : 'none')};
+`;
+
 const TicketsInfoContainer = styled.div`
   width: 100%;
-  display: ${(props) => (props.show ? 'flex' : 'none')};
+  display: ${(props) => (props.show ? 'visible' : 'none')};
   flex-direction: column;
   margin: 35px 0;
 
@@ -218,6 +353,7 @@ const TicketsInfoContainer = styled.div`
     border-radius: 20px;
     display: flex;
     justify-content: center;
+    flex-direction: column;
     align-items: center;
   }
 `;
@@ -313,9 +449,9 @@ const ChipContainer = styled.div`
   height: 28%;
 
   img {
-    width: 70px;
-    height: 70px;
-    margin-left: 20px;
+    width: 50px;
+
+    margin: 15px 20px;
   }
 `;
 
@@ -363,4 +499,55 @@ const NameContainer = styled.div`
     padding-top: 4px;
     letter-spacing: 1px;
   }
+`;
+
+const StyledTypography = styled(Typography)`
+  margin-bottom: 20px !important;
+`;
+
+const StyledSubtitle = styled(Typography)`
+  color: #8e8e8e;
+`;
+
+const Container = styled.div`
+  display: ${(props) => props.display};
+`;
+
+const BoxContainer = styled.div`
+  width: 314px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 17px;
+`;
+
+const StyledBox = styled.div`
+  width: 145px;
+  height: 145px;
+  background-color: ${(props) => props.backgroundColor};
+  border-radius: 20px;
+  border: 1px solid #cecece;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 17px;
+  div {
+    display: flex;
+    font-family: Roboto;
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 19px;
+    letter-spacing: 0em;
+    text-align: center;
+    color: #454545;
+  }
+`;
+
+const MessageContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 80%;
+  width: 100%;
 `;
