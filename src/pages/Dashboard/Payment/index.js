@@ -70,10 +70,10 @@ export default function Payment() {
     setShowResume('block');
     calculateTotal();
   };
-  const handleButtonClick = () => {
+  const handleButtonClick = async() => {
     setShowTickets(false);
     setShowPayments(true);
-    /* if (selectedTicket) {
+    if (selectedTicket) {
       try {
         const ticketId = selectedTicket.id;
         const body = { ticketTypeId: ticketId };
@@ -82,7 +82,7 @@ export default function Payment() {
       } catch (error) {
         console.error('Erro ao reservar ingresso:', error);
       }
-    } */
+    }
   };
   const calculateTotal = () => {
     let ticketPrice = selectedTicket ? selectedTicket.price : 0;
@@ -163,7 +163,7 @@ export default function Payment() {
   }
 
   function submitPayment() {
-    /* const ticketId = 123;
+    const ticketId = selectedTicket.id;
     const payment = {
       issuer: 'VISA',
       number: card,
@@ -173,12 +173,14 @@ export default function Payment() {
     };
     const config = { headers: { Authorization: `Bearer ${token}` } };
     const body = { ticketId, cardDate: payment };
+    const updateBody = { status: 'PAID' };
 
-    axios.post(`${process.env.REACT_APP_API_BASE_URL}/payments`, config, body); */
+    // axios.post(`${process.env.REACT_APP_API_BASE_URL}/payments`, config, body);
     if (card.length < 16) return alert('Confira os números do cartão');
     if (name === 'Nome Impresso no Cartão') return alert('Nome impresso no cartão é obrigatório');
     if (date.length < 5) return alert('Confira a data de expiração do cartão');
     if (cvc.length < 3) return alert('Confira o código de segurança do cartão');
+    // axios.put(`${process.env.REACT_APP_API_BASE_URL}/ticket`, config, updateBody);
 
     setShow(!show);
   }
@@ -549,4 +551,3 @@ const MessageContainer = styled.div`
   height: 80%;
   width: 100%;
 `;
-

@@ -50,7 +50,7 @@ export default function HotelCard(props) {
   }
 
   return (
-    <Container onClick={props.setSelected}>
+    <Container onClick={props.setSelected} selected={props.selected}>
       <Card>
         <img src={h.image} />
         <Title>{h.name}</Title>
@@ -69,7 +69,7 @@ export default function HotelCard(props) {
 }
 
 const Container = styled.div`
-  background-color: #ebebeb;
+background-color: ${({ selected }) => (selected ? '#ffeed2' : '#ebebeb')};
   padding: 20px;
   width: 196px;
   border-radius: 10px;

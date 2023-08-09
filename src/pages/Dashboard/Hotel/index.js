@@ -24,7 +24,6 @@ export default function Hotel() {
     const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/hotels/`, config);
     response.then((res) => {
       setHotel(res.data);
-      console.log(res.data);
     });
     response.catch((err) => {
       console.log(err.response.data);
@@ -34,13 +33,10 @@ export default function Hotel() {
         setIncludesHotel(false);
       }
     });
-    console.log('paid', paid);
-    console.log('includeshotel', includesHotel);
   }, []);
 
   function selecthotel(h) {
     setDefinedHotel(h);
-    console.log(h);
     const config = {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -50,7 +46,6 @@ export default function Hotel() {
     response
       .then((res) => {
         setRoomInfo(res.data.Rooms);
-        console.log(res.data.Rooms);
       })
       .catch((e) => console.log(e));
   }
@@ -66,7 +61,13 @@ export default function Hotel() {
 
             <Feed>
               {hotel.map((h) => {
-                return <HotelCard h={h} setSelected={() => selecthotel(h)} />;
+                return (
+                  <HotelCard
+                    h={h}
+                    setSelected={() => selecthotel(h)}
+                    selected={JSON.stringify(definedhotel) === JSON.stringify(h)}
+                  />
+                );
               })}
             </Feed>
             {definedhotel ? (
@@ -124,6 +125,7 @@ const FeedRoom = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   margin-top: 7px;
+  row-gap: 7px;
 `;
 
 const Container = styled.div`
