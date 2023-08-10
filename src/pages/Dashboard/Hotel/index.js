@@ -24,7 +24,6 @@ export default function Hotel() {
     const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/hotels/`, config);
     response.then((res) => {
       setHotel(res.data);
-      console.log(res.data);
     });
     response.catch((err) => {
       console.log(err.response.data);
@@ -34,21 +33,20 @@ export default function Hotel() {
         setIncludesHotel(false);
       }
     });
-    console.log('paid', paid);
-    console.log('includeshotel', includesHotel);
   }, []);
 
   function selecthotel(h) {
     setDefinedHotel(h);
-    console.log(h);
     const config = {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     };
     const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/hotels/${h.id}`, config);
-    response.then((res) => {
-      setRoomInfo(res.data.Rooms); console.log(res.data.Rooms);})
+    response
+      .then((res) => {
+        setRoomInfo(res.data.Rooms);
+      })
       .catch((e) => console.log(e));
   }
 
@@ -63,23 +61,27 @@ export default function Hotel() {
 
             <Feed>
               {hotel.map((h) => {
-                return <HotelCard h={h} setSelected={() => selecthotel(h)} selected={JSON.stringify(definedhotel) === JSON.stringify(h)} />;
+                return (
+                  <HotelCard
+                    h={h}
+                    setSelected={() => selecthotel(h)}
+                    selected={JSON.stringify(definedhotel) === JSON.stringify(h)}
+                  />
+                );
               })}
             </Feed>
-            {
-              definedhotel? 
-                <>
-                  <SubTitle> Ótima pedida! Agora escolha seu quarto </SubTitle>
-                  <FeedRoom>
-                    {roomInfo.map((r) => {
-                      return <Room name={r.name} capacity={r.capacity} id ={r.id} />;
-                    })}
-                  </FeedRoom> 
-                </>
-                : 
-                <></>
-            }
-            
+            {definedhotel ? (
+              <>
+                <SubTitle> Ótima pedida! Agora escolha seu quarto </SubTitle>
+                <FeedRoom>
+                  {roomInfo.map((r) => {
+                    return <Room name={r.name} capacity={r.capacity} id={r.id} />;
+                  })}
+                </FeedRoom>
+              </>
+            ) : (
+              <></>
+            )}
           </>
         ) : (
           <Container>
