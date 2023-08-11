@@ -14,6 +14,7 @@ export default function Hotel() {
   const [definedhotel, setDefinedHotel] = useState(false);
   const token = useToken();
   const [roomInfo, setRoomInfo] = useState([]);
+  const [selectedroom, setselectedroom] = useState();
 
   useEffect(() => {
     const config = {
@@ -50,6 +51,10 @@ export default function Hotel() {
       .catch((e) => console.log(e));
   }
 
+  function selectroom(e) {
+    //post booking
+  }
+
   return (
     <>
       <Title variant="h4"> Escolha de hotel e quarto </Title>
@@ -75,7 +80,17 @@ export default function Hotel() {
                 <SubTitle> Ótima pedida! Agora escolha seu quarto </SubTitle>
                 <FeedRoom>
                   {roomInfo.map((r) => {
-                    return <Room name={r.name} capacity={r.capacity} id={r.id} />;
+                    return (
+                      <Room
+                        name={r.name}
+                        capacity={r.capacity}
+                        selected={JSON.stringify(selectedroom) === JSON.stringify(r)}
+                        onClick={() => {
+                          setselectedroom(r);
+                        }}
+                        id={r.id}
+                      />
+                    );
                   })}
                 </FeedRoom>
               </>
@@ -139,4 +154,17 @@ const Container = styled.div`
   font-size: 20px;
   font-weight: 400;
   line-height: 23.44px;
+`;
+
+const SelectRoomButton = styled.button`
+width: 182px
+height: 37px
+border-radius: 4px
+font-family: Roboto;
+font-size: 14px;
+font-weight: 400;
+line-height: 16px;
+letter-spacing: 0em;
+text-align: center;
+
 `;
