@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import axios from 'axios';
 import { useState } from 'react';
 import useToken from '../../../hooks/useToken';
+import { useNavigate } from 'react-router-dom';
 
 export default function Hotel() {
   const [hotel, setHotel] = useState([]);
@@ -14,6 +15,8 @@ export default function Hotel() {
   const [definedhotel, setDefinedHotel] = useState(false);
   const token = useToken();
   const [roomInfo, setRoomInfo] = useState([]);
+  const [selectedroom, setselectedroom] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const config = {
@@ -50,6 +53,23 @@ export default function Hotel() {
       .catch((e) => console.log(e));
   }
 
+  function selectroom(e) {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+    const body = { roomId: selectedroom.id };
+    const response = axios.post(`${process.env.REACT_APP_API_BASE_URL}/booking`, body, config);
+
+    response
+      .then((res) => {
+        console.log('Quarto escolhido');
+        navigate('/dashboard/activities');
+      })
+      .catch((e) => console.log(e)); 
+  }
+
   return (
     <>
       <Title variant="h4"> Escolha de hotel e quarto </Title>
@@ -75,9 +95,20 @@ export default function Hotel() {
                 <SubTitle> Ótima pedida! Agora escolha seu quarto </SubTitle>
                 <FeedRoom>
                   {roomInfo.map((r) => {
-                    return <Room name={r.name} capacity={r.capacity} id={r.id} />;
+                    return (
+                      <Room
+                        name={r.name}
+                        capacity={r.capacity}
+                        selected={JSON.stringify(selectedroom) === JSON.stringify(r)}
+                        setSelected={() => setselectedroom(r)}
+                        id={r.id}
+                      />
+                    );
                   })}
                 </FeedRoom>
+                <SelectRoomButton>
+                  <button onClick={selectroom}  disabled={!selectedroom}>RESERVAR QUARTO</button>
+                </SelectRoomButton>
               </>
             ) : (
               <></>
@@ -139,4 +170,23 @@ const Container = styled.div`
   font-size: 20px;
   font-weight: 400;
   line-height: 23.44px;
+`;
+
+const SelectRoomButton = styled.div`
+button{width: 182px;
+height: 37px;
+border-radius: 4px;
+font-family: Roboto;
+font-size: 14px;
+font-weight: 400;
+line-height: 16px;
+letter-spacing: 0em;
+text-align: center;
+background: #E0E0E0;
+border: none;
+margin-top: 20px;
+}
+display: flex;
+width: 100%;
+justify-content: center;
 `;
