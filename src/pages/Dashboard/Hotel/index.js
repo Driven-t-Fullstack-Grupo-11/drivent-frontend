@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import axios from 'axios';
 import { useState } from 'react';
 import useToken from '../../../hooks/useToken';
+import { useNavigate } from 'react-router-dom';
 
 export default function Hotel() {
   const [hotel, setHotel] = useState([]);
@@ -14,6 +15,11 @@ export default function Hotel() {
   const [definedhotel, setDefinedHotel] = useState(false);
   const token = useToken();
   const [roomInfo, setRoomInfo] = useState([]);
+  const [selectedroom, setselectedroom] = useState(false);
+  const navigate = useNavigate();
+  const [reserved, setReserved] = useState( { Room: { id: 1 } } );
+  console.log('reserved room');
+  console.log(reserved.Room);
 
   useEffect(() => {
     const config = {
@@ -33,6 +39,17 @@ export default function Hotel() {
         setIncludesHotel(false);
       }
     });
+    const response2 = axios.get(`${process.env.REACT_APP_API_BASE_URL}/booking`, config);
+    response2
+      .then((res) => {
+        if(res.data) {
+          setReserved(res.data);
+        }
+        else{
+          setReserved({ Room: { id: 1 } });
+        }
+      })
+      .catch((e) => console.log(e));
   }, []);
 
   function selecthotel(h) {
@@ -50,39 +67,138 @@ export default function Hotel() {
       .catch((e) => console.log(e));
   }
 
+  function selectroom(e) {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+    const body = { roomId: selectedroom.id };
+    const response = axios.post(`${process.env.REACT_APP_API_BASE_URL}/booking`, body, config);
+
+    response
+      .then((res) => {
+        console.log('Quarto escolhido');
+        navigate('/dashboard/activities');
+      })
+      .catch((e) => console.log(e)); 
+  }
+
+  function changeroom() {
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+    const body = {
+      roomId: reserved.Room.id
+    };
+    const response = axios.put(`${process.env.REACT_APP_API_BASE_URL}/booking/${reserved.id}`, body, config);
+    response
+      .then((res) => {
+        setReserved({ Room: { id: 1 } });
+        const config = {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+        const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/hotels/`, config);
+        response.then((res) => {
+          setHotel(res.data);
+        });
+        response.catch((err) => {
+          console.log(err.response.data);
+          if (err.response && err.response.status === 402) {
+            setPaid(false);
+          } else if (err.response && err.response.status === 404) {
+            setIncludesHotel(false);
+          }
+        });
+        const response2 = axios.get(`${process.env.REACT_APP_API_BASE_URL}/booking`, config);
+        response2
+          .then((res) => {
+            if(res.data.length) {
+              setReserved(res.data);
+            }
+            else{
+              setReserved({ Room: { id: 1 } });
+            }
+          })
+          .catch((e) => console.log(e));
+      })
+      .catch((e) => console.log(e)); 
+  }
+
+  function changeroom2() {
+    setReserved({ Room: { id: 1 } });
+  }
+
   return (
     <>
       <Title variant="h4"> Escolha de hotel e quarto </Title>
 
       {includesHotel ? (
-        paid ? (
-          <>
-            <SubTitle> Primeiro, escolha seu hotel </SubTitle>
+        paid ?  (
+          reserved.id ? 
+            <>
+              <Feed>
+                {hotel.filter(
+                  (h) => h.id === reserved?.Room.hotelId
+                ).map((f) => <HotelCard
+                  h={f}
+                  setSelected={() => selecthotel(f)}
+                  selected={JSON.stringify(definedhotel) === JSON.stringify(f)}
+                  reserved = {reserved}
+                  id={reserved.Room.id}
+                />)}
+              </Feed>
+              <FeedRoom>
+                <ChangeRoomButton onClick={changeroom2}>TROCAR DE QUARTO</ChangeRoomButton>
+              </FeedRoom>
+            </> 
+            :
+            <>
+              <SubTitle> Primeiro, escolha seu hotel </SubTitle>
 
-            <Feed>
-              {hotel.map((h) => {
-                return (
-                  <HotelCard
-                    h={h}
-                    setSelected={() => selecthotel(h)}
-                    selected={JSON.stringify(definedhotel) === JSON.stringify(h)}
-                  />
-                );
-              })}
-            </Feed>
-            {definedhotel ? (
+              <Feed>
+                {hotel.map((h) => {
+                  return (
+                    <HotelCard
+                      h={h}
+                      setSelected={() => selecthotel(h)}
+                      selected={JSON.stringify(definedhotel) === JSON.stringify(h)}
+                      reserved = {reserved}
+                      id={reserved.Room.id}
+                    />
+                  );
+                })}
+              </Feed>
               <>
-                <SubTitle> Ótima pedida! Agora escolha seu quarto </SubTitle>
-                <FeedRoom>
-                  {roomInfo.map((r) => {
-                    return <Room name={r.name} capacity={r.capacity} id={r.id} />;
-                  })}
-                </FeedRoom>
+                {
+                  definedhotel?
+                    <>
+                      <SubTitle> Ótima pedida! Agora escolha seu quarto </SubTitle>
+                      <FeedRoom>
+                        {roomInfo.map((r) => {
+                          return (
+                            <Room
+                              name={r.name}
+                              capacity={r.capacity}
+                              selected={JSON.stringify(selectedroom) === JSON.stringify(r)}
+                              setSelected={() => setselectedroom(r)}
+                              id={r.id}
+                            />
+                          );
+                        })}
+                      </FeedRoom>
+                      <SelectRoomButton>
+                        <button onClick={selectroom}  disabled={!selectedroom}>RESERVAR QUARTO</button>
+                      </SelectRoomButton>
+                    </> :
+                    <></>
+                }
               </>
-            ) : (
-              <></>
-            )}
-          </>
+            </>
         ) : (
           <Container>
             <p>Você precisa ter confirmado pagamento antes</p>
@@ -139,4 +255,39 @@ const Container = styled.div`
   font-size: 20px;
   font-weight: 400;
   line-height: 23.44px;
+`;
+
+const SelectRoomButton = styled.div`
+button{width: 182px;
+height: 37px;
+border-radius: 4px;
+font-family: Roboto;
+font-size: 14px;
+font-weight: 400;
+line-height: 16px;
+letter-spacing: 0em;
+text-align: center;
+background: #E0E0E0;
+border: none;
+margin-top: 20px;
+}
+display: flex;
+width: 100%;
+justify-content: center;
+`;
+
+const ChangeRoomButton = styled.button`
+width: 182px;
+height: 37px;
+border-radius: 4px;
+font-family: Roboto;
+font-size: 14px;
+font-weight: 400;
+line-height: 16px;
+letter-spacing: 0em;
+text-align: center;
+background: #E0E0E0;
+border: none;
+margin-top: 20px;
+}
 `;

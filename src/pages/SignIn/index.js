@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
@@ -13,6 +13,7 @@ import EventInfoContext from '../../contexts/EventInfoContext';
 import UserContext from '../../contexts/UserContext';
 
 import useSignIn from '../../hooks/api/useSignIn';
+import { GithubIcon } from '../../components/Form/github-icon';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -38,6 +39,27 @@ export default function SignIn() {
     }
   }
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    console.log(code);
+  }, []);
+
+  async function gitHubLogin() {
+    const client_id = process.env.REACT_APP_CLIENT_ID;
+    const githubURL = process.env.REACT_APP_GITHUB_URL;
+
+    const params = new URLSearchParams({
+      response_type: 'code',
+      scope: 'user',
+      client_id: client_id,
+      redirect_uri: 'http://localhost:3000/sign-in',
+    });
+
+    const authURL = `${githubURL}?${params.toString()}`;
+    window.location.href = authURL;
+  }
+
   return (
     <AuthLayout background={eventInfo.backgroundImageUrl}>
       <Row>
@@ -57,6 +79,10 @@ export default function SignIn() {
           />
           <Button type="submit" color="primary" fullWidth disabled={loadingSignIn}>
             Entrar
+          </Button>
+          <Button onClick={gitHubLogin} color="secondary" fullWidth>
+            Entrar com github
+            <GithubIcon />
           </Button>
         </form>
       </Row>

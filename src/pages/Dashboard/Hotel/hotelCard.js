@@ -7,9 +7,11 @@ import { useState } from 'react';
 export default function HotelCard(props) {
   const token = useToken();
   const h = props.h;
+  const id = props.id;
   const [roomInfo, setRoomInfo] = useState([]);
   const [totalCapacity, setTotalCapacity] = useState(0);
   const [uniqueAccommodations, setUniqueAccommodations] = useState([]);
+  const [quantitypeople, setQuantityPeople] = useState(0);
 
   useEffect(() => {
     const config = {
@@ -37,6 +39,26 @@ export default function HotelCard(props) {
     });
   }, [h.id]);
 
+  useEffect(() => {
+    if(props.reserved.id) {
+      console.log('O reservado em hotelCard é');
+      console.log(props.reserved);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/booking/${id}`, config);
+      response.then((response) => {
+        let l = response.data.length;
+        setQuantityPeople(l - 1);
+      });
+      response.catch((err) => {
+        console.log(err.response.data);
+      });
+    }
+  }, [props.reserved]);
+
   function getAccommodationType(capacity) {
     if (capacity === 1) {
       return 'Single';
@@ -54,15 +76,26 @@ export default function HotelCard(props) {
       <Card>
         <img src={h.image} />
         <Title>{h.name}</Title>
-        <SubTitle>Tipos de acomodação:</SubTitle>
-        {uniqueAccommodations.map((type, index) => (
-          <Frag>
-            <TextCapacity>{type}</TextCapacity>
-            {index !== uniqueAccommodations.length - 1 && ','}
-          </Frag>
-        ))}
-        <SubTitle>Vagas disponíveis:</SubTitle>
-        <p>{totalCapacity}</p>
+        {!props.reserved.id ? 
+          (<>
+            <SubTitle>Tipos de acomodação:</SubTitle>
+            {uniqueAccommodations.map((type, index) => (
+              <Frag>
+                <TextCapacity>{type}</TextCapacity>
+                {index !== uniqueAccommodations.length - 1 && ','}
+              </Frag>
+            ))}
+            <SubTitle>Vagas disponíveis:</SubTitle>
+            <p>{totalCapacity}</p>
+          </>) 
+          : 
+          <>
+            <SubTitle>Quarto reservado</SubTitle>
+            <p>{`${h.name} (${getAccommodationType(props.reserved.Room.capacity)})`}</p>
+            <SubTitle>Pessoas no seu quarto</SubTitle>
+            <p>{`Você e mais ${quantitypeople}`}</p>
+          </>
+        }
       </Card>
     </Container>
   );

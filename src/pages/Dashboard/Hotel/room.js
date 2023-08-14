@@ -7,6 +7,26 @@ export default function Room(props) {
   const token = useToken();
   const [black, setBlack] = useState([]);
   const [white, setWhite] = useState([]);
+  const [pink, setPink] = useState([]);
+
+  useEffect(() => {
+    if(props.selected) {
+      let newar = [...white];
+      newar.pop();
+      setWhite(newar);
+      let newar2 = [...pink];
+      newar2.push(<ion-icon name="person" style={ { color: '#FF4791' } }></ion-icon>);
+      setPink(newar2);
+    }
+    else{
+      let newar = [...pink];
+      newar.pop();
+      setPink(newar);
+      let newar2 = [...white];
+      newar2.push(<ion-icon name="person-outline"></ion-icon>);
+      setWhite(newar2);
+    }
+  }, [props.selected]);
 
   useEffect(() => {
     const config = {
@@ -26,6 +46,7 @@ export default function Room(props) {
         arwhite.push(<ion-icon name="person-outline"></ion-icon>);
       }
       setWhite([...arwhite]);
+      console.log(props.capacity - res.data.length);
     });
     response.catch((err) => {
       console.log(err.response.data);
@@ -34,10 +55,11 @@ export default function Room(props) {
 
   return (
     <>
-      <RoomCard>
+      <RoomCard onClick={props.capacity - black.length === 0 ? () => {console.log('a');} : props.setSelected} disabled={props.capacity - black.length === 0} selected={props.selected} full={props.capacity - black.length === 0}>
         <h1>{props.name}</h1>
         <div>
           {white}
+          {pink}
           {black}
         </div>
       </RoomCard>
@@ -56,9 +78,11 @@ const RoomCard = styled.div`
   padding-right: 7px;
   align-items: center;
   justify-content: space-between;
+  background: ${props => props.full ? '#cecece' : (props.selected ? '#FFEED2' : 'white')};
 
   div{
     display: flex;
     gap: 5px;
   }
 `;
+
