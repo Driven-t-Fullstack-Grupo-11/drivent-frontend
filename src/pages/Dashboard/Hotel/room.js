@@ -55,7 +55,7 @@ export default function Room(props) {
 
   return (
     <>
-      <RoomCard onClick={props.setSelected} disabled={props.capacity - black.length === 0} selected={props.selected} full={props.capacity - black.length === 0}>
+      <RoomCard onClick={props.capacity - black.length === 0 ? () => {console.log('a');} : props.setSelected} disabled={props.capacity - black.length === 0} selected={props.selected} full={props.capacity - black.length === 0}>
         <h1>{props.name}</h1>
         <div>
           {white}
