@@ -14,7 +14,6 @@ export default function Dashboard() {
   return (
     <DashboardLayout background={eventInfo.backgroundImageUrl}>
       <NavigationBar />
-
       <Container>
         <Outlet />
       </Container>

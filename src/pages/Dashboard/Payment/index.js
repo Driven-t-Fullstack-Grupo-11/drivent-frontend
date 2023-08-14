@@ -9,6 +9,7 @@ import { createTicket } from '../../../services/ticketTypeApi';
 import Chip from '../../../assets/images/pngwing.png';
 import Check from '../../../assets/images/checkicon.png';
 import axios from 'axios';
+import { savePayment } from '../../../services/paymentApi';
 
 export default function Payment() {
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -34,6 +35,7 @@ export default function Payment() {
   const [card2, setCard2] = useState('••••');
   const [card3, setCard3] = useState('••••');
   const [card4, setCard4] = useState('••••');
+  const [ticketInfo, setTIcketInfo] = useState();
   const token = useToken();
   let hotelPrice = 0;
 
@@ -50,9 +52,11 @@ export default function Payment() {
         console.error('Error fetching personal information:', error);
       });
   }, [token]);
+
   useEffect(() => {
     calculateTotal();
   }, [selectedTicket, selectedHotel]);
+
   const handleTicketClick = (ticket) => {
     setSelectedTicket(ticket);
     setSelectedHotel(null);
@@ -65,41 +69,38 @@ export default function Payment() {
       setShowResume('none');
     }
   };
+
   const handleHotelClick = (hotel) => {
     setSelectedHotel(hotel);
     setShowResume('block');
     calculateTotal();
   };
+
   const handleButtonClick = async() => {
-    setShowTickets(false);
-    setShowPayments(true);
     if (selectedTicket) {
       try {
         const ticketId = selectedTicket.id;
         const body = { ticketTypeId: ticketId };
         const createdTicket = await createTicket(body, token);
+        setShowTickets(false);
+        setShowPayments(true);
+        setTIcketInfo(createdTicket);
         setShowTicket('none');
       } catch (error) {
         console.error('Erro ao reservar ingresso:', error);
       }
     }
   };
+
   const calculateTotal = () => {
     let ticketPrice = selectedTicket ? selectedTicket.price : 0;
     hotelPrice = selectedHotel === 'Com Hotel' ? 350 : 0;
     const totalPrice = ticketPrice + hotelPrice;
     setTotalPrice(totalPrice);
   };
+
   if (ticketsTypeInfoError) {
     return <div>Error: {ticketsTypeInfoError}</div>;
-  }
-
-  function click() {
-    setShow(!show);
-  }
-
-  function button() {
-    setCard1('1234');
   }
 
   function changeNumber(value) {
@@ -162,8 +163,8 @@ export default function Payment() {
     }
   }
 
-  function submitPayment() {
-    const ticketId = selectedTicket.id;
+  async function submitPayment() {
+    const ticketId = ticketInfo.id;
     const payment = {
       issuer: 'VISA',
       number: card,
@@ -171,18 +172,19 @@ export default function Payment() {
       expirationDate: date,
       cvv: cvc,
     };
-    const config = { headers: { Authorization: `Bearer ${token}` } };
-    const body = { ticketId, cardDate: payment };
-    const updateBody = { status: 'PAID' };
+    const body = { ticketId: ticketId, cardData: payment };
 
-    // axios.post(`${process.env.REACT_APP_API_BASE_URL}/payments`, config, body);
     if (card.length < 16) return alert('Confira os números do cartão');
     if (name === 'Nome Impresso no Cartão') return alert('Nome impresso no cartão é obrigatório');
     if (date.length < 5) return alert('Confira a data de expiração do cartão');
     if (cvc.length < 3) return alert('Confira o código de segurança do cartão');
-    // axios.put(`${process.env.REACT_APP_API_BASE_URL}/ticket`, config, updateBody);
 
-    setShow(!show);
+    try {
+      await savePayment(body, token);
+      setShow(!show);
+    } catch (error) {
+      console.error('Erro ao processar o pagamento', error);
+    }
   }
 
   return (
@@ -275,7 +277,7 @@ export default function Payment() {
               <CardNumberContainer>
                 <input
                   placeholder="Card Number"
-                  maxLength={16}
+                  maxLength={20}
                   value={card}
                   onChange={(e) => changeNumber(e.target.value)}
                 ></input>
