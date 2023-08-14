@@ -12,6 +12,13 @@ export default function Activities() {
   const [isNotRemote, setIsNotRemote] = useState(true);
   const [activitiesInfo, setActivitiesInfo] = useState([]);
   const [selectDate, setSelectDate] = useState(null);
+  const [showEachActivities, setShowEachActivities] = useState(true);
+  const [filteredActivities, setFilteredActivities] = useState([]);
+  const [activitiesByLocal, setActivitiesByLocal] = useState({
+    'Auditório Principal': [],
+    'Auditório Lateral': [],
+    'Sala de Workshop': [],
+  });
   const token = useToken();
   const { eventInfo } = useContext(EventInfoContext);
 
@@ -36,7 +43,31 @@ export default function Activities() {
     console.log(isNotRemote);
   }, []);
 
-  const uniquesDates = [...new Set(activitiesInfo.map((activity) => activity.date))];
+  const uniquesDates = activitiesInfo.length > 0 ? [...new Set(activitiesInfo.map((activity) => activity.timeStart))] : [];
+
+  const handleDateClick = (date) => {
+    setSelectDate(date);
+    const filteredActivities = activitiesInfo.filter(
+      (activity) => activity.timeStart === date
+    );
+
+    const updatedActivitiesByLocal = {
+      'Auditório Principal': [],
+      'Auditório Lateral': [],
+      'Sala de Workshop': [],
+    };
+
+    filteredActivities.forEach((activity) => {
+      if (updatedActivitiesByLocal.hasOwnProperty(activity.local)) {
+        updatedActivitiesByLocal[activity.local].push(activity);
+      }
+    });
+
+    setFilteredActivities(filteredActivities);
+    setShowEachActivities(false);
+    setActivitiesByLocal(updatedActivitiesByLocal);
+    console.log(updatedActivitiesByLocal);
+  };
 
   return (
     <>
@@ -48,16 +79,27 @@ export default function Activities() {
             <SubTitle> Primeiro, filtre pelo dia do evento </SubTitle>
             <ContainerDate>
               {uniquesDates.map((date) => (
-                <EachDate
+                <EachDate 
                   key={date}
                   date={date}
+                  onClick={() => handleDateClick(date)}
+                  isSelected={date === selectDate}
                 />
               ))}
             </ContainerDate>
-            <ContainerLocal>
-              <EachLocal />
-              <EachLocal />
-              <EachLocal />
+            <ContainerLocal show={showEachActivities}>
+              <EachLocal 
+                local='Auditório Principal' 
+                activities={activitiesByLocal['Auditório Principal']}              
+              />
+              <EachLocal 
+                local='Auditório Lateral' 
+                activities={activitiesByLocal['Auditório Lateral']}              
+              />
+              <EachLocal 
+                local='Sala de Workshop' 
+                activities={activitiesByLocal['Sala de Workshop']}             
+              />
             </ContainerLocal>
           </>
         ) : (
@@ -99,7 +141,7 @@ const ContainerDate = styled.div`
 const ContainerLocal = styled.div`
   margin-top: 50px;
   width: 840px;
-  display: grid;
+  display: ${(props) => (props.show ? 'none' : 'grid')};
   grid-template-columns: 1fr 1fr 1fr 1fr;
 `;
 
