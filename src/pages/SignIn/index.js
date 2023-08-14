@@ -66,6 +66,7 @@ export default function SignIn() {
             Authorization: `Bearer ${profileToken}`
           }
         });
+        console.log('here');
         const userProfile = response.data;
         console.log(userProfile);
       }
