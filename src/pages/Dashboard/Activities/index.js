@@ -7,15 +7,18 @@ import EventInfoContext from '../../../contexts/EventInfoContext';
 import EachDate from './EachDate';
 import EachLocal from './EachLocal';
 
-import styled from 'styled-components';
-import SVG from '../../../components/EnterSVG';
-import { CloseCircleOutlined } from '@ant-design/icons';
-
 export default function Activities() {
   const [paid, setPaid] = useState(true);
   const [isNotRemote, setIsNotRemote] = useState(true);
   const [activitiesInfo, setActivitiesInfo] = useState([]);
   const [selectDate, setSelectDate] = useState(null);
+  const [showEachActivities, setShowEachActivities] = useState(true);
+  const [filteredActivities, setFilteredActivities] = useState([]);
+  const [activitiesByLocal, setActivitiesByLocal] = useState({
+    'Auditório Principal': [],
+    'Auditório Lateral': [],
+    'Sala de Workshop': [],
+  });
   const token = useToken();
   const { eventInfo } = useContext(EventInfoContext);
 
@@ -40,7 +43,31 @@ export default function Activities() {
     console.log(isNotRemote);
   }, []);
 
-  const uniquesDates = [...new Set(activitiesInfo.map((activity) => activity.date))];
+  const uniquesDates = activitiesInfo.length > 0 ? [...new Set(activitiesInfo.map((activity) => activity.timeStart))] : [];
+
+  const handleDateClick = (date) => {
+    setSelectDate(date);
+    const filteredActivities = activitiesInfo.filter(
+      (activity) => activity.timeStart === date
+    );
+
+    const updatedActivitiesByLocal = {
+      'Auditório Principal': [],
+      'Auditório Lateral': [],
+      'Sala de Workshop': [],
+    };
+
+    filteredActivities.forEach((activity) => {
+      if (updatedActivitiesByLocal.hasOwnProperty(activity.local)) {
+        updatedActivitiesByLocal[activity.local].push(activity);
+      }
+    });
+
+    setFilteredActivities(filteredActivities);
+    setShowEachActivities(false);
+    setActivitiesByLocal(updatedActivitiesByLocal);
+    console.log(updatedActivitiesByLocal);
+  };
 
   return (
     <>
@@ -52,16 +79,27 @@ export default function Activities() {
             <SubTitle> Primeiro, filtre pelo dia do evento </SubTitle>
             <ContainerDate>
               {uniquesDates.map((date) => (
-                <EachDate
+                <EachDate 
                   key={date}
                   date={date}
+                  onClick={() => handleDateClick(date)}
+                  isSelected={date === selectDate}
                 />
               ))}
             </ContainerDate>
-            <ContainerLocal>
-              <EachLocal />
-              <EachLocal />
-              <EachLocal />
+            <ContainerLocal show={showEachActivities}>
+              <EachLocal 
+                local='Auditório Principal' 
+                activities={activitiesByLocal['Auditório Principal']}              
+              />
+              <EachLocal 
+                local='Auditório Lateral' 
+                activities={activitiesByLocal['Auditório Lateral']}              
+              />
+              <EachLocal 
+                local='Sala de Workshop' 
+                activities={activitiesByLocal['Sala de Workshop']}             
+              />
             </ContainerLocal>
           </>
         ) : (
@@ -76,22 +114,6 @@ export default function Activities() {
           <p>de fazer a escolha de atividades</p>
         </Container>
       )}
-    </>
-  );
-  return (
-    <>
-      <ContainerStages>
-        <DivStage data-title={'Auditório Principal'}>
-          <ActivitiesCard>
-            <VerticaLine></VerticaLine><SVG />
-          </ActivitiesCard>
-          <ActivitiesCard>
-            <CloseCircleOutlined style={{ color: 'red' }}/>
-          </ActivitiesCard>
-        </DivStage>
-        <DivStage data-title={'Auditório Lateral'}></DivStage>
-        <DivStage data-title={'Sala de Workshop'}></DivStage>
-      </ContainerStages>
     </>
   );
 }
@@ -119,7 +141,7 @@ const ContainerDate = styled.div`
 const ContainerLocal = styled.div`
   margin-top: 50px;
   width: 840px;
-  display: grid;
+  display: ${(props) => (props.show ? 'none' : 'grid')};
   grid-template-columns: 1fr 1fr 1fr 1fr;
 `;
 
@@ -134,50 +156,4 @@ const Container = styled.div`
   font-size: 20px;
   font-weight: 400;
   line-height: 23.44px;
-`;
-
-const ContainerStages = styled.div`
-  width: 864px;
-  height: 400px;
-  display: flex;
-`;
-
-const DivStage = styled.div`
-  width: 33%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  position: relative;
-  border: 1px solid #D7D7D7;
-  margin-right: -1px;
-  &::before {
-  content: attr(data-title);
-  position: absolute;
-  top: -33px;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  color: #7B7B7B;
-  }
-`;
-
-const ActivitiesCard = styled.div`
-  width: 265px;
-  height: 79px;
-  display: flex;
-  position: relative;
-  flex-direction: row;
-  background-color: #F1F1F1;
-  border-radius: 5px;
-  margin-top: 10px;
-`;
-
-const VerticaLine = styled.div`
-  width: 1px;
-  height: 75%;
-  position: absolute;
-  top: 10px;
-  right: 66px;
-  background-color: #CFCFCF;
 `;
