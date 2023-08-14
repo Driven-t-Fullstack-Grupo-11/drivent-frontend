@@ -43,7 +43,9 @@ export default function Hotel() {
     response2
       .then((res) => {
         if(res.data) {
-          setReserved(res.data);
+          let obj = { ...res.data };
+          obj.status = false;
+          setReserved(obj);
         }
         else{
           setReserved({ Room: { id: 1 } });
@@ -68,69 +70,48 @@ export default function Hotel() {
   }
 
   function selectroom(e) {
-    const config = {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-    const body = { roomId: selectedroom.id };
-    const response = axios.post(`${process.env.REACT_APP_API_BASE_URL}/booking`, body, config);
-
-    response
-      .then((res) => {
-        console.log('Quarto escolhido');
+    if(!reserved.status) {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const body = { roomId: selectedroom.id };
+      const response = axios.post(`${process.env.REACT_APP_API_BASE_URL}/booking`, body, config);
+  
+      response
+        .then((res) => {
+          console.log('Quarto escolhido');
+          navigate('/dashboard/activities');
+        })
+        .catch((e) => console.log(e)); 
+    }
+    else{
+      let obj = { ...reserved };
+      obj.status = false;
+      setReserved(obj);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const body = {
+        roomId: selectedroom.id
+      };
+      const response = axios.put(`${process.env.REACT_APP_API_BASE_URL}/booking/${reserved.id}`, body, config);
+      response.then((res) => {
+        console.log('Quarto alterado');
         navigate('/dashboard/activities');
       })
-      .catch((e) => console.log(e)); 
-  }
-
-  function changeroom() {
-    const config = {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-    const body = {
-      roomId: reserved.Room.id
-    };
-    const response = axios.put(`${process.env.REACT_APP_API_BASE_URL}/booking/${reserved.id}`, body, config);
-    response
-      .then((res) => {
-        setReserved({ Room: { id: 1 } });
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        };
-        const response = axios.get(`${process.env.REACT_APP_API_BASE_URL}/hotels/`, config);
-        response.then((res) => {
-          setHotel(res.data);
-        });
-        response.catch((err) => {
-          console.log(err.response.data);
-          if (err.response && err.response.status === 402) {
-            setPaid(false);
-          } else if (err.response && err.response.status === 404) {
-            setIncludesHotel(false);
-          }
-        });
-        const response2 = axios.get(`${process.env.REACT_APP_API_BASE_URL}/booking`, config);
-        response2
-          .then((res) => {
-            if(res.data.length) {
-              setReserved(res.data);
-            }
-            else{
-              setReserved({ Room: { id: 1 } });
-            }
-          })
-          .catch((e) => console.log(e));
-      })
-      .catch((e) => console.log(e)); 
+        .catch((e) => console.log(e)); 
+    }
   }
 
   function changeroom2() {
-    setReserved({ Room: { id: 1 } });
+    let obj = { ...reserved };
+    obj.status = true;
+    setReserved(obj);
+    console.log('Status é' + reserved.status);
   }
 
   return (
@@ -139,7 +120,7 @@ export default function Hotel() {
 
       {includesHotel ? (
         paid ?  (
-          reserved.id ? 
+          !reserved.status ? 
             <>
               <Feed>
                 {hotel.filter(
@@ -150,6 +131,7 @@ export default function Hotel() {
                   selected={JSON.stringify(definedhotel) === JSON.stringify(f)}
                   reserved = {reserved}
                   id={reserved.Room.id}
+                  status={reserved.status}
                 />)}
               </Feed>
               <FeedRoom>
@@ -169,6 +151,7 @@ export default function Hotel() {
                       selected={JSON.stringify(definedhotel) === JSON.stringify(h)}
                       reserved = {reserved}
                       id={reserved.Room.id}
+                      status={reserved.status}
                     />
                   );
                 })}
