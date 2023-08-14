@@ -14,10 +14,12 @@ import UserContext from '../../contexts/UserContext';
 
 import useSignIn from '../../hooks/api/useSignIn';
 import { GithubIcon } from '../../components/Form/github-icon';
+import axios from 'axios';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rerender, setRerender] = useState(false);
 
   const { loadingSignIn, signIn } = useSignIn();
 
@@ -42,7 +44,34 @@ export default function SignIn() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
-    console.log(code);
+
+    if (code && (localStorage.getItem('githubToken') === null)) {
+      async function getGithubToken() {
+        try {
+          const response = await axios.post('http://localhost:4000/auth/github-sign-in', { code });
+          const { token } = response.data;
+          localStorage.setItem('githubToken', token);
+          console.log(token);
+        } catch (error) {
+          console.log(error);
+        }
+      }
+      getGithubToken();
+      setRerender(!rerender);
+    }else if(code && (localStorage.getItem('githubToken') !== null)) {
+      async function getGithubProfile() {
+        const profileToken = localStorage.getItem('githubToken');
+        const response = await axios.get('http://localhost:4000/users/profile', {
+          headers: {
+            Authorization: `Bearer ${profileToken}`
+          }
+        });
+        const userProfile = response.data;
+        console.log(userProfile);
+      }
+      getGithubProfile();
+      navigate('/dashboard');
+    }
   }, []);
 
   async function gitHubLogin() {
