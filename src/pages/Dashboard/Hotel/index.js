@@ -289,5 +289,4 @@ text-align: center;
 background: #E0E0E0;
 border: none;
 margin-top: 20px;
-}
 `;
