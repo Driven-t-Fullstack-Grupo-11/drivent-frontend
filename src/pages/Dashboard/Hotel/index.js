@@ -44,11 +44,11 @@ export default function Hotel() {
       .then((res) => {
         if(res.data) {
           let obj = { ...res.data };
-          obj.status = false;
+          obj.status = true;
           setReserved(obj);
         }
         else{
-          setReserved({ Room: { id: 1 } });
+          setReserved({ notyet: true, Room: { id: 1 } });
         }
       })
       .catch((e) => console.log(e));
@@ -109,7 +109,7 @@ export default function Hotel() {
 
   function changeroom2() {
     let obj = { ...reserved };
-    obj.status = true;
+    obj.status = false;
     setReserved(obj);
     console.log('Status é' + reserved.status);
   }
@@ -120,7 +120,7 @@ export default function Hotel() {
 
       {includesHotel ? (
         paid ?  (
-          !reserved.status ? 
+          reserved.status ? 
             <>
               <Feed>
                 {hotel.filter(

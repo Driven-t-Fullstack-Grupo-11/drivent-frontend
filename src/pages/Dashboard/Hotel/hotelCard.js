@@ -76,7 +76,7 @@ export default function HotelCard(props) {
       <Card>
         <img src={h.image} />
         <Title>{h.name}</Title>
-        {props.reserved.status ? 
+        {!props.reserved.status ? 
           (<>
             <SubTitle>Tipos de acomodação:</SubTitle>
             {uniqueAccommodations.map((type, index) => (
