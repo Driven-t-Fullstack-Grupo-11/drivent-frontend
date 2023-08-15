@@ -73,7 +73,7 @@ export default function HotelCard(props) {
 
   return (
     <Container onClick={props.setSelected} selected={props.selected}>
-      <Card>
+      <Card selected={props.selected}>
         <img src={h.image} />
         <Title>{h.name}</Title>
         {!props.reserved.status ? 
@@ -117,7 +117,7 @@ background-color: ${({ selected }) => (selected ? '#ffeed2' : '#ebebeb')};
 `;
 
 const Card = styled.div`
-  background-color: #ebebeb;
+  background-color: ${({ selected }) => (selected ? '#ffeed2' : '#ebebeb')};
   color: #343434;
 
   p {

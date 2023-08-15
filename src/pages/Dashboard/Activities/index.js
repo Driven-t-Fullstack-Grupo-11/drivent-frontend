@@ -37,7 +37,7 @@ export default function Activities() {
       if (err.response && err.response.status === 402) {
         setPaid(false);
       } else if (err.response && err.response.status === 204) {
-        setIsNotRemote(true);
+        setIsNotRemote(false);
       }
     });
     console.log(isNotRemote);
